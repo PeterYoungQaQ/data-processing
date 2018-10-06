@@ -3,7 +3,7 @@ from ML_actual_combat import get_train_and_test
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, LabelBinarizer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-
+from sklearn.preprocessing import Imputer
 from sklearn.pipeline import FeatureUnion
 from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
@@ -38,8 +38,6 @@ T = train_housing["total_bedrooms"].fillna(median)  # option 3
 由于median策略只能对实数值有效，所以需要将文本属性先去除，
 然后再补缺失值。最后使用fit方法对变量执行相应操作。
 """
-
-from sklearn.preprocessing import Imputer
 
 imputer = Imputer(strategy="median")
 housing_num = train_housing.drop("ocean_proximity", axis=1)
