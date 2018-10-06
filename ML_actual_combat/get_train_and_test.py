@@ -26,7 +26,7 @@ housing = read_data.housing
 
 train_set, test_set = train_test_split(housing,
                                        test_size=0.2, random_state=42)
-print(len(train_set), "train +", len(test_set), "test")
+# print(len(train_set), "train +", len(test_set), "test")
 
 housing["income_cat"] = np.ceil(housing["median_income"] / 1.5)
 housing["income_cat"].where(housing["income_cat"] < 5, 5.0, inplace=True)
