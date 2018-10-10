@@ -8,11 +8,12 @@
 根据机器的计算能力来确定参数组合的个数
 """
 
-from sklearn.model_selection import RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.preprocessing import LabelEncoder
+
 from ML_actual_combat.pretreatment \
-    import train_housing_labels, train_housing_prepared, encoder, num_attribs
-import numpy as np
+    import train_housing_labels, train_housing_prepared, num_attribs
 
 param_ran = {'n_estimators': range(30, 50), 'max_features': range(3, 8)}
 forest_reg = RandomForestRegressor()
@@ -34,6 +35,7 @@ random_search.fit(train_housing_prepared, train_housing_labels)
 
 
 def feature_importance():
+    encoder = LabelEncoder()
     feature_importances = random_search.best_estimator_.feature_importances_
     extra_attribs = ["rooms_per_hhold", "pop_per_hhold", "bedrooms_per_room"]
     cat_one_hot_attribs = list(encoder.classes_)
