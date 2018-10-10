@@ -156,7 +156,12 @@ def feature_scaling():
         ("cat_pipeline", cat_pipeline),
     ])
     housing_prepared = full_pipeline.fit_transform(train_housing)
-    print(housing_prepared)
+    # print(housing_prepared)
 
+    return housing_prepared
+
+
+train_housing_prepared = feature_scaling()
+num_attribs = list(housing_num)
 
 # feature_scaling()
