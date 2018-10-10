@@ -11,7 +11,7 @@
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.preprocessing import LabelEncoder
-
+from ML_actual_combat.correlation import train_housing
 from ML_actual_combat.pretreatment \
     import train_housing_labels, train_housing_prepared, num_attribs
 
@@ -36,11 +36,14 @@ random_search.fit(train_housing_prepared, train_housing_labels)
 
 def feature_importance():
     encoder = LabelEncoder()
+    housing_cat = train_housing["ocean_proximity"]
+    encoder.fit_transform(housing_cat)
     feature_importances = random_search.best_estimator_.feature_importances_
     extra_attribs = ["rooms_per_hhold", "pop_per_hhold", "bedrooms_per_room"]
     cat_one_hot_attribs = list(encoder.classes_)
     attributes = num_attribs + extra_attribs + cat_one_hot_attribs
-    sorted(zip(feature_importances, attributes), reverse=True)
+    result = sorted(zip(feature_importances, attributes), reverse=True)
+    print(result)
 
 
-feature_importance()
+# feature_importance()
