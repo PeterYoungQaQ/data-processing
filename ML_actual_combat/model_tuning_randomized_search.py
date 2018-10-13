@@ -9,11 +9,14 @@
 """
 
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.preprocessing import LabelEncoder
 from ML_actual_combat.correlation import train_housing
 from ML_actual_combat.pretreatment \
-    import train_housing_labels, train_housing_prepared, num_attribs
+    import train_housing_labels, train_housing_prepared, num_attribs, full_pineline
+from ML_actual_combat.get_train_and_test import strat_test_set
+import numpy as np
 
 param_ran = {'n_estimators': range(30, 50), 'max_features': range(3, 8)}
 forest_reg = RandomForestRegressor()
@@ -47,3 +50,17 @@ def feature_importance():
 
 
 # feature_importance()
+
+# 在测试集上验证这个模型的泛化能力以及准确性
+def test_model():
+    final_model = random_search.best_estimator_
+    X_test = strat_test_set.drop("median_house_value", axis=1)
+    y_test = strat_test_set["median_house_value"].copy()
+    X_test_prepared = full_pineline.transform(X_test)
+    final_predictions = final_model.predict(X_test_prepared)
+    final_mse = mean_squared_error(y_test, final_predictions)
+    final_rmse = np.sqrt(final_mse)
+    print(final_rmse)
+
+
+# test_model()
