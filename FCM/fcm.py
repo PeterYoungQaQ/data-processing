@@ -1,11 +1,14 @@
 # coding=utf-8
 """
+    FCM(Fuzzy c-means)
 首先，给定一个由N个L维向量组成的数据集X以及所要分得的类别个数C，自定义隶属度矩阵
 （1）设定类别的个数C和模糊系数m；
 （2）初始化隶属度矩阵且满足公式（2）中的归一化条件；
 （3）根据公式（5）计算聚类中心；
 （4）根据公式（4）更新隶属度矩阵；
 （5）根据矩阵范数比较迭代的隶属度矩阵，如果，迭代停止，否则返回（3）。
+
+具体教程和公式可以参考 https://www.cnblogs.com/ybjourney/p/4735335.html
 """
 
 from pylab import *
@@ -28,7 +31,7 @@ num_attr = len(df.columns) - 1
 # 分类数
 k = 3
 # 最大迭代数
-MAX_ITER = 100
+MAX_ITER = 200
 # 样本数
 n = len(df)  # the number of row
 # 模糊参数
