@@ -5,9 +5,12 @@
 
 from sklearn.datasets import fetch_mldata
 from sklearn.linear_model import SGDClassifier
-from sklearn.metrics import precision_score, recall_score, f1_score, precision_recall_curve
-from sklearn.model_selection import cross_val_predict
+from sklearn.metrics import precision_score, recall_score, f1_score, precision_recall_curve, confusion_matrix
+from sklearn.model_selection import cross_val_predict, cross_val_score
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
 import numpy as np
+import numpy.random as rnd
 from matplotlib import pyplot as plt
 
 mnist = fetch_mldata('MNIST original')
@@ -24,7 +27,7 @@ y_train_5 = (y_train == 5)
 y_test_5 = (y_test == 5)
 
 # 训练模型
-sgd_clf = SGDClassifier(random_state=42)
+sgd_clf = SGDClassifier(random_state=42, max_iter=None, tol=None)
 sgd_clf.fit(X_train, y_train_5)
 
 # 交叉验证
@@ -65,9 +68,9 @@ precisions, recalls, thresholds = precision_recall_curve(y_train_5, y_scores)
 
 # print(precisions,recalls,thresholds)
 
-def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):
-    plt.plot(thresholds, precisions[:-1], "b--", label="Precision")
-    plt.plot(thresholds, recalls[:-1], "g-", label="Recall")
+def plot_precision_recall_vs_threshold(precision, recall, threshold):
+    plt.plot(threshold, precision[:-1], "b--", label="Precision")
+    plt.plot(threshold, recall[:-1], "g-", label="Recall")
     plt.xlabel("Threshold")
     plt.legend(loc="upper left")
     plt.ylim([0, 1])
@@ -75,3 +78,119 @@ def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):
 
 plot_precision_recall_vs_threshold(precisions, recalls, thresholds)
 # plt.show()
+
+"""
+将二分类器扩展到多分类器一般有两种做法。
+  1、OVA(one-versus-all)：比如分类数字（0-9），
+    则训练10个分类器（是否为0的分类器，是否为1的分类器.，…，是否为9的分类器），
+    每一个分类器最后会算出一个得分，判定为最高分的那一类
+  
+    2、OVO(one-versus-one)：每个类之间训练一个分类器（比如0和1训练一个分类器，1-3训练一个分类器），
+    这样总共有N*(N-1)/2个分类器，哪个类得分最高判定为那一类。
+"""
+
+
+# 下面是一个二分类器SGD分类器扩展为多分类器用作数字分类的例子(使用的是OVA的方法）
+def multiple_claasifier():
+    sgd_clfs = SGDClassifier(random_state=42, max_iter=None, tol=None)
+    sgd_clfs.fit(X_train, y_train)
+    some_digit = X[1]
+    sgd_clfs.predict([some_digit])
+    some_digit_scores = sgd_clfs.decision_function([some_digit])
+    print(some_digit_scores)
+
+
+# multiple_claasifier()
+
+
+"""
+        对于分类任务，同样也可以采取交叉验证法，
+不同的是，误差不是均方误差，而是准确率（或者交叉熵）。
+和之前交叉验证的函数相同为cross_val_score，不过scoring为accuracy。
+"""
+
+
+def classifier_effect():
+    # K折交叉验证（k-fold）
+    # cv = k
+    # 把初始训练样本分成k份，其中（k-1）份被用作训练集，
+    # 剩下一份被用作评估集，这样一共可以对分类器做k次训练，
+    # 并且得到k个训练结果。
+    result = cross_val_score(sgd_clf, X_train, y_train, cv=3, scoring="accuracy")
+    # print(result)
+    # 当然也可以采用预处理（标准化）来增加准确率
+    scaler = StandardScaler()
+    X_train_scale = scaler.fit_transform(X_train.astype(np.float64))
+    new_result = cross_val_score(sgd_clf, X_train_scale, y_train, cv=3, scoring="accuracy")
+    # print(new_result)
+    return X_train_scale
+
+
+X_train_scaled = classifier_effect()
+
+# 接下来要进行简单的错误分析
+"""
+    首先要使用cross_val_predict计算交叉验证后验证集部分
+的预测分类结果（而不是正确率），然后根据真正的标签和预测结果对比，画出混淆矩阵，
+第 i 行第 j 列的数字代表数字 i 被预测为数字 j 的个数总和,对角线上即为正确分类的次数
+"""
+
+
+def error_analysis():
+    y_train_pre = cross_val_predict(sgd_clf, X_train_scaled, y_train, cv=3)
+    conf_mx = confusion_matrix(y_train, y_train_pre)
+    print(conf_mx)
+    plt.matshow(conf_mx, cmap=plt.cm.gray)
+    plt.show()
+    # 只看错误的分布
+    row_sums = conf_mx.sum(axis=1, keepdims=True)
+    norm_conf_mx = conf_mx / row_sums.astype(np.float64)
+    # fill_diagonal(, 0)将对角元素设置为0，不考虑正确分组
+    np.fill_diagonal(norm_conf_mx, 0)
+    plt.matshow(norm_conf_mx, cmap=plt.cm.gray)
+    plt.show()
+
+
+# error_analysis()
+
+
+# 多标签分类
+# 例子中的任务是：分类数据 是否大于等于7 以及 是否为奇数 这2个标签
+# 使用的是KNN算法
+def multilabel_classification():
+    some_digit = X[1]
+    y_train_large = (y_train >= 7)
+    y_train_odd = (y_train % 2 == 1)
+    # numpy.c_()
+    # Translates slice objects to concatenation along the second axis.
+    y_multilabel = np.c_[y_train_large, y_train_odd]
+    knn_clf = KNeighborsClassifier()
+    knn_clf.fit(X_train, y_multilabel)
+    result = knn_clf.predict([some_digit])
+    print(result)
+
+
+# multilabel_classification()
+
+# 多输出分类
+
+def multioutput_classification():
+    # 生成噪声图
+    noise1 = rnd.randint(0, 100, (len(X_train), 784))
+    noise2 = rnd.randint(0, 100, (len(X_test), 784))
+    X_train_mod = X_train + noise1
+    X_test_mod = X_test + noise2
+    y_train_mod = X_train
+    y_test_mod = X_test
+    plt.subplot(1, 2, 1)
+    plt.imshow(X_train_mod[36000].reshape(28, 28), cmap=plt.cm.gray)
+    plt.subplot(1, 2, 2)
+    plt.imshow(X_train[36000].reshape(28, 28), cmap=plt.cm.gray)
+    knn_clf = KNeighborsClassifier()
+    knn_clf.fit(X_train_mod, y_train_mod)
+    clean_digit = knn_clf.predict([X_train_mod[36000]])
+    plt.imshow(clean_digit.reshape(28, 28), cmap=plt.cm.gray)
+    plt.show()
+
+
+# multioutput_classification()
