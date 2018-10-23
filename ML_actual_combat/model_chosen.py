@@ -45,7 +45,7 @@ def stochastic_gradient_descent():
     print(sgd_reg.coef_)
 
 
-# stochastic_gradient_descent()
+## stochastic_gradient_descent()
 
 # 多项式模型
 def polynomial_model():
