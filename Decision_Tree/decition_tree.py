@@ -10,6 +10,7 @@
 
 from math import log
 import operator
+import matplotlib.pyplot as plt
 
 """
     在划分数据集之前之后信息发生的变化称为信息增益，计算每个特征值划分数据集获得的信息增益，
@@ -161,7 +162,146 @@ def creatTree(dataSet, labels):
 
     return myTree
 
+
 # 测试
 # myData, labels = creatDataSet()
 # mytree = creatTree(myData, labels)
 # print(mytree)
+
+# coding=utf-8
+
+
+# 定义文本框和箭头格式
+decisionNode = dict(boxstyle="sawtooth", fc="0.8")  # fc 应该是颜色深浅
+leafNode = dict(boxstyle="round4", fc="0.8")
+arrow_args = dict(arrowstyle="<-")
+
+
+def plotNode(nodeTxt, centerPt, parentPt, nodeType):
+    # centerPt 箭头指向坐标， parentPt 箭头终点坐标
+    createPlot.ax1.annotate(nodeTxt, xy=parentPt, xycoords='axes fraction',
+                            xytext=centerPt, textcoords='axes fraction',
+                            va="center", ha="center", bbox=nodeType, arrowprops=arrow_args)
+
+
+def createPlot(inTree):
+    fig = plt.figure(1, facecolor='white')
+    fig.clf()
+    createPlot.ax1 = plt.subplot(111, frameon=False)
+    plotTree.totalW = float(getNumLeafs(inTree))  # 储存树的宽度
+    plotTree.totalD = float(getTreeDepth(inTree))  # 储存树的深度
+    plotTree.xOff = -0.5 / plotTree.totalW
+    plotTree.yOff = 1.0
+    plotTree(inTree, (0.5, 1.0), '')
+    plt.show()
+
+
+# createPlot()
+
+
+# 定义两个新函数，来获取叶节点的数目和树的层数
+def getNumLeafs(myTree):
+    numLeafs = 0
+    firstSides = list(myTree.keys())  # dict.keys() 返回字典的 keys
+    firstStr = firstSides[0]
+    secondDict = myTree[firstStr]
+    for key in secondDict.keys():
+        # 利用 type() 函数测试节点的数据类型是否为字典
+        if type(secondDict[key]).__name__ == 'dict':  # 如果模块是被导入，__name__的值为模块名字
+            numLeafs += getNumLeafs(secondDict[key])
+        else:
+            numLeafs += 1
+    return numLeafs
+
+
+def getTreeDepth(myTree):  # 计算遍历过程总遇到判断节点的个数
+    maxDepth = 0
+    firstSides = list(myTree.keys())  # dict.keys() 返回字典的 keys
+    firstStr = firstSides[0]
+    secondDict = myTree[firstStr]
+    for key in secondDict.keys():
+        if type(secondDict[key]).__name__ == 'dict':
+            thisDepth = 1 + getTreeDepth(secondDict[key])
+        else:
+            thisDepth = 1
+        if thisDepth > maxDepth:
+            maxDepth = thisDepth
+    return maxDepth
+
+
+def retrieveTree(i):
+    listOfTrees = [{'no surfacing': {0: 'no', 1: {'flippers': {0: 'no', 1: 'yes'}}}},
+                   {'no surfacing': {0: 'no', 1: {'flippers': {0: {'head': {0: 'no', 1: 'yes'}}, 1: 'no'}}}}
+                   ]
+    return listOfTrees[i]
+
+
+def plotMidText(cntrPt, parentPt, txtString):  # 在父子节点间填充文本信息
+    # 计算父节点和子节点的中间位置
+    xMid = (parentPt[0] - cntrPt[0]) / 2.0 + cntrPt[0]
+    yMid = (parentPt[1] - cntrPt[1]) / 2.0 + cntrPt[1]
+    createPlot.ax1.text(xMid, yMid, txtString)
+
+
+def plotTree(myTree, parentPt, nodeTxt):  # 计算树的宽与高
+    numLeafs = getNumLeafs(myTree)
+    firstSides = list(myTree.keys())  # dict.keys() 返回字典的 keys
+    firstStr = firstSides[0]
+    cntrPt = (plotTree.xOff + (1.0 + float(numLeafs)) / 2.0 /
+              plotTree.totalW, plotTree.yOff)
+    plotMidText(cntrPt, parentPt, nodeTxt)  # 标记子节点属性值
+    plotNode(firstStr, cntrPt, parentPt, decisionNode)
+    secondDict = myTree[firstStr]
+    plotTree.yOff = plotTree.yOff - 1.0 / plotTree.totalD  # 减少 y 偏移
+    for key in secondDict.keys():
+        if type(secondDict[key]).__name__ == 'dict':
+            plotTree(secondDict[key], cntrPt, str(key))
+        else:
+            plotTree.xOff = plotTree.xOff + 1.0 / plotTree.totalW
+            plotNode(secondDict[key], (plotTree.xOff, plotTree.yOff),
+                     cntrPt, leafNode)
+            plotMidText((plotTree.xOff, plotTree.yOff), cntrPt, str(key))
+    plotTree.yOff = plotTree.yOff + 1.0 / plotTree.totalD
+
+
+# 决策树的分类函数，返回当前节点的分类标签
+def classify(inputTree, featLabels, testVec):  # 传入的数据为dict类型
+    global classLabel
+    firstSides = list(inputTree.keys())
+    firstStr = firstSides[0]  # 找到输入的第一个元素
+    ##这里表明了python3和python2版本的差别，上述两行代码在2.7中为：firstStr = inputTree.key()[0]
+    secondDict = inputTree[firstStr]  # 建一个dict
+    # print(secondDict)
+    featIndex = featLabels.index(firstStr)  # 找到在label中firstStr的下标
+    for i in secondDict.keys():
+        print(i)
+
+    for key in secondDict.keys():
+        if testVec[featIndex] == key:
+            if type(secondDict[key]) == dict:  # 判断一个变量是否为dict，直接type就好
+                classLabel = classify(secondDict[key], featLabels, testVec)
+            else:
+                classLabel = secondDict[key]
+    return classLabel  # 比较测试数据中的值和树上的值，最后得到节点
+
+
+# 测试
+# myData, labels = creatDataSet()
+# print(labels)
+# mytree = retrieveTree(0)
+# print(mytree)
+# classify = classify(mytree, labels, [1, 0])
+# print(classify)
+
+# 使用决策树预测隐形眼镜类型
+
+def glasses():
+    fr = open('lenses.txt')
+    lenses = [inst.strip().split('\t') for inst in fr.readlines()]
+    lensesLabels = ['ages', 'prescript', 'astigmatic', 'tearRate']
+    lensesTree = creatTree(lenses, lensesLabels)
+    print(lensesTree)
+    createPlot(lensesTree)
+
+
+# glasses()
