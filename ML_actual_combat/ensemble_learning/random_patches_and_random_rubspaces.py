@@ -15,10 +15,9 @@ from sklearn.datasets import make_moons
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_iris, fetch_mldata
 import matplotlib.pyplot as plt
 import matplotlib
-from sklearn.datasets import fetch_mldata
 
 (X, y) = make_moons(1000, noise=0.5)
 X_train, X_test, y_train, y_test = \
